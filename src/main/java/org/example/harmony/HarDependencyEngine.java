@@ -39,7 +39,7 @@ public class HarDependencyEngine {
     /**
      * HarmonyOS SDK依赖前缀（无需生成stub）
      */
-    private static final String[] SDK_PREFIXES = {"@kit", "@ohos", "@hms"};
+    private static final String[] SDK_PREFIXES = {"@kit.", "@ohos.", "@hms", "@ohos/hvigor-ohos-plugin"};
 
     private final DependencyScanner scanner;
     private final DependencyStructureGenerator structureGenerator;

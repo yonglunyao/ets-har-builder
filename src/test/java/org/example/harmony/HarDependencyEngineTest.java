@@ -1,14 +1,11 @@
 package org.example.harmony;
 
-import org.example.harmony.model.DependencyInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,7 +62,7 @@ class HarDependencyEngineTest {
         // 验证生成的文件（在项目根目录下，即tempDir）
         Path depPath = tempDir.resolve("@pura/harmony-utils");
         assertTrue(Files.exists(depPath));
-        assertTrue(Files.exists(depPath.resolve("index.d.ts")));
+        assertTrue(Files.exists(depPath.resolve("Index.d.ts")));
         assertTrue(Files.exists(depPath.resolve("oh-package.json5")));
     }
 

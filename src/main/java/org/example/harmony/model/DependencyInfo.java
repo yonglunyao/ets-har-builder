@@ -29,11 +29,19 @@ public class DependencyInfo {
      */
     private final Map<String, String> extraDeclarations;
 
+    /**
+     * 接口方法信息（按接口名分组）
+     * key: 接口名称（如 "WordArray"）
+     * value: 该接口的方法列表
+     */
+    private final Map<String, List<InterfaceMethodInfo>> interfaceMethods;
+
     public DependencyInfo(String modulePath) {
         this.modulePath = modulePath;
         this.referencedTypes = new ArrayList<>();
         this.importInfos = new ArrayList<>();
         this.extraDeclarations = new HashMap<>();
+        this.interfaceMethods = new HashMap<>();
     }
 
     public String getModulePath() {
@@ -48,6 +56,14 @@ public class DependencyInfo {
         return importInfos;
     }
 
+    public Map<String, String> getExtraDeclarations() {
+        return extraDeclarations;
+    }
+
+    public Map<String, List<InterfaceMethodInfo>> getInterfaceMethods() {
+        return interfaceMethods;
+    }
+
     public void addReferencedType(TypeInfo type) {
         referencedTypes.add(type);
     }
@@ -60,8 +76,33 @@ public class DependencyInfo {
         extraDeclarations.put(name, declaration);
     }
 
-    public Map<String, String> getExtraDeclarations() {
-        return extraDeclarations;
+    /**
+     * 添加接口方法信息（避免重复）
+     */
+    public void addInterfaceMethod(InterfaceMethodInfo method) {
+        String interfaceName = method.getInterfaceName();
+        List<InterfaceMethodInfo> methods = interfaceMethods.computeIfAbsent(interfaceName, k -> new ArrayList<>());
+        // 检查是否已存在相同签名的的方法
+        boolean exists = methods.stream().anyMatch(m ->
+                m.getMethodName().equals(method.getMethodName()) &&
+                m.isStatic() == method.isStatic());
+        if (!exists) {
+            methods.add(method);
+        }
+    }
+
+    /**
+     * 获取指定接口的所有方法
+     */
+    public List<InterfaceMethodInfo> getMethodsForInterface(String interfaceName) {
+        return interfaceMethods.getOrDefault(interfaceName, new ArrayList<>());
+    }
+
+    /**
+     * 获取所有有方法定义的接口名称
+     */
+    public List<String> getInterfacesWithMethods() {
+        return new ArrayList<>(interfaceMethods.keySet());
     }
 
     /**
@@ -83,6 +124,7 @@ public class DependencyInfo {
                 "modulePath='" + modulePath + '\'' +
                 ", referencedTypes=" + referencedTypes.size() +
                 ", importInfos=" + importInfos.size() +
+                ", interfacesWithMethods=" + interfaceMethods.size() +
                 '}';
     }
 }

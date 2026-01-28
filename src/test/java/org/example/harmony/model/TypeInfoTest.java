@@ -57,6 +57,7 @@ class TypeInfoTest {
 
         assertTrue(str.contains("MyClass"));
         assertTrue(str.contains("class"));
-        assertTrue(str.contains("<T>"));
+        // 新的toString格式不包含typeParameters，而是包含children数量
+        assertTrue(str.contains("children="));
     }
 }
