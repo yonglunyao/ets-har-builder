@@ -13,6 +13,7 @@ import java.util.Map;
 /**
  * 依赖目录结构生成器
  * 负责为每个外部依赖创建相应的目录结构
+ * 依赖生成在项目根目录下，而非模块内部
  */
 public class DependencyStructureGenerator {
     private static final Logger logger = LoggerFactory.getLogger(DependencyStructureGenerator.class);
@@ -27,13 +28,13 @@ public class DependencyStructureGenerator {
      * 生成所有依赖的目录结构
      *
      * @param dependencies 依赖信息映射
-     * @param baseOutputPath 基础输出路径（通常是模块的oh_modules目录）
+     * @param projectRootPath 项目根目录路径
      */
-    public void generateStructure(Map<String, DependencyInfo> dependencies, String baseOutputPath) throws IOException {
-        logger.info("Generating dependency structure in: {}", baseOutputPath);
+    public void generateStructure(Map<String, DependencyInfo> dependencies, String projectRootPath) throws IOException {
+        logger.info("Generating dependency structure in project root: {}", projectRootPath);
 
         for (DependencyInfo dependency : dependencies.values()) {
-            String dependencyPath = buildDependencyPath(baseOutputPath, dependency.getModulePath());
+            String dependencyPath = buildDependencyPath(projectRootPath, dependency.getModulePath());
 
             logger.info("  Creating dependency: {} -> {}", dependency.getModulePath(), dependencyPath);
 
@@ -51,15 +52,19 @@ public class DependencyStructureGenerator {
     }
 
     /**
-     * 构建依赖的输出路径
+     * 构建依赖的输出路径（在项目根目录下）
      * 将模块路径转换为文件系统路径
      *
      * 例如:
-     * - @pura/harmony-utils -> oh_modules/@pura/harmony-utils
-     * - lodash -> oh_modules/lodash
+     * - @pura/harmony-utils -> @pura/harmony-utils
+     * - lodash -> lodash
+     *
+     * @param projectRootPath 项目根目录
+     * @param modulePath 模块路径
+     * @return 完整的依赖路径
      */
-    private String buildDependencyPath(String basePath, String modulePath) {
-        Path path = Paths.get(basePath, "oh_modules");
+    private String buildDependencyPath(String projectRootPath, String modulePath) {
+        Path path = Paths.get(projectRootPath);
 
         if (modulePath.startsWith("@")) {
             // scoped package: @pura/harmony-utils
@@ -68,7 +73,7 @@ public class DependencyStructureGenerator {
                 path = path.resolve(parts[0]);  // @pura
                 path = path.resolve(parts[1]);  // harmony-utils
             } else {
-                path = path.resolve(modulePath.substring(1));  // 移除@符号
+                path = path.resolve(modulePath);
             }
         } else {
             // regular package: lodash
@@ -79,10 +84,13 @@ public class DependencyStructureGenerator {
     }
 
     /**
-     * 获取生成的依赖根目录路径
+     * 获取项目根目录路径
      * 用于后续更新oh-package.json5中的依赖引用
+     *
+     * @param projectRootPath 项目根目录
+     * @return 项目根目录路径
      */
-    public String getOhModulesPath(String baseOutputPath) {
-        return Paths.get(baseOutputPath, "oh_modules").toString();
+    public String getProjectRootPath(String projectRootPath) {
+        return projectRootPath;
     }
 }

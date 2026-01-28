@@ -63,6 +63,7 @@ public class HarDependencyEngine {
 
     /**
      * 处理HAR模块，生成所有外部依赖的stub声明
+     * 依赖生成在项目根目录下，而非模块内部
      *
      * @param modulePath HAR模块的根目录路径
      * @return 处理结果，包含生成的依赖路径
@@ -74,12 +75,22 @@ public class HarDependencyEngine {
         logger.info("Module path: {}", modulePath);
         logger.info("=".repeat(60));
 
+        // 计算项目根目录（模块的父目录）
+        Path moduleDir = Paths.get(modulePath);
+        Path projectRootPath = moduleDir.getParent();
+        if (projectRootPath == null) {
+            projectRootPath = moduleDir.toAbsolutePath().getParent();
+        }
+        String projectRoot = projectRootPath.toString();
+
+        logger.info("Project root: {}", projectRoot);
+
         // 1. 扫描模块，收集外部依赖
         Map<String, DependencyInfo> allDependencies = scanner.scan(modulePath);
 
         if (allDependencies.isEmpty()) {
             logger.info("No external dependencies found, nothing to do.");
-            return new EngineResult(modulePath, Map.of(), true);
+            return new EngineResult(modulePath, projectRoot, Map.of(), true);
         }
 
         // 2. 过滤掉HarmonyOS SDK依赖（@kit, @ohos, @hms）
@@ -94,28 +105,27 @@ public class HarDependencyEngine {
 
         if (dependencies.isEmpty()) {
             logger.info("No third-party dependencies found (only SDK dependencies were detected), nothing to do.");
-            return new EngineResult(modulePath, allDependencies, true);
+            return new EngineResult(modulePath, projectRoot, allDependencies, true);
         }
 
-        // 3. 生成依赖目录结构
-        structureGenerator.generateStructure(dependencies, modulePath);
+        // 3. 生成依赖目录结构（在项目根目录下）
+        structureGenerator.generateStructure(dependencies, projectRoot);
 
         // 4. 更新模块的oh-package.json5，添加本地依赖引用
         updateModuleOhPackage(modulePath, dependencies);
 
-        String ohModulesPath = structureGenerator.getOhModulesPath(modulePath);
-
         logger.info("=".repeat(60));
         logger.info("HarDependencyEngine - Completed");
-        logger.info("Generated {} dependencies in: {}", dependencies.size(), ohModulesPath);
+        logger.info("Generated {} dependencies in: {}", dependencies.size(), projectRoot);
         logger.info("The module is now ready for hvigor build.");
         logger.info("=".repeat(60));
 
-        return new EngineResult(modulePath, dependencies, true);
+        return new EngineResult(modulePath, projectRoot, dependencies, true);
     }
 
     /**
      * 更新模块的oh-package.json5，添加本地依赖引用
+     * 依赖路径相对于模块位置，指向项目根目录
      */
     private void updateModuleOhPackage(String modulePath, Map<String, DependencyInfo> dependencies) throws IOException {
         Path packagePath = Paths.get(modulePath, "oh-package.json5");
@@ -137,11 +147,11 @@ public class HarDependencyEngine {
             jsonObject.add("dependencies", depsObject);
         }
 
-        // 添加本地依赖引用
+        // 添加本地依赖引用（路径指向项目根目录）
         for (DependencyInfo dep : dependencies.values()) {
             String version = depsObject.has(dep.getModulePath())
                     ? depsObject.get(dep.getModulePath()).getAsString()
-                    : "file:./oh_modules/" + getRelativeDepPath(dep.getModulePath());
+                    : "file:../" + getRelativeDepPath(dep.getModulePath());
 
             depsObject.addProperty(dep.getModulePath(), version);
             logger.debug("Added dependency: {} -> {}", dep.getModulePath(), version);
@@ -173,17 +183,23 @@ public class HarDependencyEngine {
      */
     public static class EngineResult {
         private final String modulePath;
+        private final String projectRootPath;
         private final Map<String, DependencyInfo> dependencies;
         private final boolean success;
 
-        public EngineResult(String modulePath, Map<String, DependencyInfo> dependencies, boolean success) {
+        public EngineResult(String modulePath, String projectRootPath, Map<String, DependencyInfo> dependencies, boolean success) {
             this.modulePath = modulePath;
+            this.projectRootPath = projectRootPath;
             this.dependencies = dependencies;
             this.success = success;
         }
 
         public String getModulePath() {
             return modulePath;
+        }
+
+        public String getProjectRootPath() {
+            return projectRootPath;
         }
 
         public Map<String, DependencyInfo> getDependencies() {
@@ -194,17 +210,13 @@ public class HarDependencyEngine {
             return success;
         }
 
-        public String getOhModulesPath() {
-            return Paths.get(modulePath, "oh_modules").toString();
-        }
-
         @Override
         public String toString() {
             return "EngineResult{" +
                     "modulePath='" + modulePath + '\'' +
+                    ", projectRootPath='" + projectRootPath + '\'' +
                     ", dependencies=" + dependencies.size() +
                     ", success=" + success +
-                    ", ohModulesPath='" + getOhModulesPath() + '\'' +
                     '}';
         }
     }
@@ -230,7 +242,7 @@ public class HarDependencyEngine {
                 System.out.println("\n✓ SUCCESS");
                 System.out.println("  Module: " + result.getModulePath());
                 System.out.println("  Dependencies generated: " + result.getDependencies().size());
-                System.out.println("  Output path: " + result.getOhModulesPath());
+                System.out.println("  Output path: " + result.getProjectRootPath());
                 System.out.println("\nThe module is now ready for hvigor build.");
             } else {
                 System.err.println("\n✗ FAILED");
