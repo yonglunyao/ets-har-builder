@@ -359,7 +359,7 @@ public class DtsGenerator {
 
         StringBuilder content = new StringBuilder();
         content.append("{\n");
-        content.append("  \"name\": \"").append(dependency.getOhPackageName()).append("\",\n");
+        content.append("  \"name\": \"").append(dependency.getModulePath()).append("\",\n");
         content.append("  \"version\": \"1.0.0\",\n");
         content.append("  \"description\": \"Auto-generated stub for ").append(dependency.getModulePath()).append("\",\n");
         content.append("  \"main\": \"index.d.ts\",\n");
