@@ -67,7 +67,7 @@ public class DtsGenerator {
      * @param outputPath 输出目录（依赖的根目录）
      */
     public void generate(DependencyInfo dependency, String outputPath) throws IOException {
-        Path dtsPath = Paths.get(outputPath, "index.d.ts");
+        Path dtsPath = Paths.get(outputPath, "Index.d.ts");
 
         logger.info("Generating DTS file: {}", dtsPath);
         logger.debug("  Module: {}", dependency.getModulePath());
@@ -362,7 +362,7 @@ public class DtsGenerator {
         content.append("  \"name\": \"").append(dependency.getModulePath()).append("\",\n");
         content.append("  \"version\": \"1.0.0\",\n");
         content.append("  \"description\": \"Auto-generated stub for ").append(dependency.getModulePath()).append("\",\n");
-        content.append("  \"main\": \"index.d.ts\",\n");
+        content.append("  \"main\": \"Index.d.ts\",\n");
         content.append("  \"author\": \"ets-har-builder\",\n");
         content.append("  \"license\": \"MIT\",\n");
         content.append("  \"dependencies\": {}\n");

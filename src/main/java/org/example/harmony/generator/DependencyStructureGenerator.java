@@ -5,9 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 
 /**
@@ -41,14 +43,36 @@ public class DependencyStructureGenerator {
             // 创建目录
             Files.createDirectories(Paths.get(dependencyPath));
 
-            // 生成index.d.ts
+            // 生成Index.d.ts
             dtsGenerator.generate(dependency, dependencyPath);
 
             // 生成oh-package.json5
             dtsGenerator.generateOhPackageJson(dependency, dependencyPath);
+
+            // 复制build-profile.json5模板
+            copyBuildProfileTemplate(dependencyPath);
         }
 
         logger.info("Generated {} dependencies", dependencies.size());
+    }
+
+    /**
+     * 复制build-profile.json5模板到依赖目录
+     */
+    private void copyBuildProfileTemplate(String dependencyPath) throws IOException {
+        Path targetPath = Paths.get(dependencyPath, "build-profile.json5");
+
+        // 从resources中读取模板文件
+        InputStream templateStream = getClass().getClassLoader()
+                .getResourceAsStream("templates/build-profile.json5");
+
+        if (templateStream == null) {
+            logger.warn("build-profile.json5 template not found in resources, skipping");
+            return;
+        }
+
+        Files.copy(templateStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+        logger.debug("  Copied build-profile.json5 to: {}", targetPath);
     }
 
     /**
